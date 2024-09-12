@@ -1,0 +1,22 @@
+cabal-version:      3.0
+name:               BICL
+version:            0.1.0.0
+homepage:           https://github.com/Le0-dot/BICL
+license:            MIT
+license-file:       LICENSE
+author:             Le0-dot
+maintainer:         lkolyadich@gmail.com
+category:           Development
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall
+
+executable BICL
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.19.1.0
+                    , megaparsec
+                    , text
+    hs-source-dirs:   src
+    default-language: GHC2021
