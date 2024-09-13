@@ -2,7 +2,7 @@
 
 module Lexeme where
 
-import Text.Megaparsec.Char (hspace1, alphaNumChar, char, letterChar)
+import Text.Megaparsec.Char (hspace1, alphaNumChar, char, letterChar, space1)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Types
 import qualified Data.Text as T
@@ -14,17 +14,23 @@ import Data.Char (isAlphaNum)
 (<||>) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 (<||>) = liftA2 (||)
 
-spaceConsumer :: Parser ()
-spaceConsumer = L.space
+hspaceConsumer :: Parser ()
+hspaceConsumer = L.space
     hspace1
     (L.skipLineComment "//")
     (L.skipBlockCommentNested "/*" "*/")
 
+spaceConsumer :: Parser ()
+spaceConsumer = L.space
+    space1
+    (L.skipLineComment "//")
+    (L.skipBlockCommentNested "/*" "*/")
+
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceConsumer
+lexeme = L.lexeme hspaceConsumer
 
 symbol :: T.Text -> Parser T.Text
-symbol = L.symbol spaceConsumer
+symbol = L.symbol hspaceConsumer
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
