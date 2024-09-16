@@ -2,9 +2,12 @@ module Types where
 
 import Data.Text qualified as T
 import Data.Void (Void)
-import Text.Megaparsec (Parsec)
+import Text.Megaparsec (Parsec, Pos)
+import Control.Monad.State (StateT)
 
-type Parser = Parsec Void T.Text
+type ParserState = Pos
+
+type Parser = StateT ParserState (Parsec Void T.Text)
 
 newtype Module = Module
     { topLevelStatements :: [TopLevel]
@@ -21,7 +24,6 @@ data Expression
     | FunctionExpression    Function
     | CallExpression        Call
     | BlockExpression       [Expression]
-    | ParenthesisExpression Expression
     deriving (Show)
 
 data Constant

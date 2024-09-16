@@ -21,5 +21,6 @@ executable BICL
     build-depends:    base ^>=4.19.1.0
                     , megaparsec
                     , text
+                    , mtl
     hs-source-dirs:   src
     default-language: GHC2021
