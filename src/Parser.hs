@@ -25,6 +25,7 @@ expression :: Parser Expression
 expression = dbg "expression" (choice
     [ dbg "function" $ FunctionExpression <$> function
     , dbg "block" $ BlockExpression <$> block
+    , dbg "let" $ LetExpression <$> letExpr
     , dbg "parenthesis" $ parens expression
     , dbg "identifier" $ IdentifierExpression <$> identifier
     , dbg "constant" $ ConstantExpression <$> constant
@@ -50,3 +51,6 @@ constant = choice
     [ IntegerConstant <$> integer
     , BooleanConstant <$> bool
     ]
+
+letExpr :: Parser Let
+letExpr = keyword "let" >> uncurry Let <$> assignment
