@@ -19,11 +19,12 @@ data TopLevel
     deriving (Show)
 
 data Expression
-    = ConstantExpression    Constant
-    | IdentifierExpression  T.Text
-    | FunctionExpression    Function
-    | CallExpression        Call
-    | BlockExpression       [Expression]
+    = ConstantExpression   Constant
+    | IdentifierExpression T.Text
+    | FunctionExpression   Function
+    | CallExpression       Call
+    | BlockExpression      [Expression]
+    | LetExpression        Let
     deriving (Show)
 
 data Constant
@@ -39,4 +40,9 @@ data Function = Function
 data Call = Call
     { callFunction  :: Expression
     , callArguments :: [Expression]
+    } deriving (Show)
+
+data Let = Let
+    { letVariableName  :: T.Text
+    , letRightHandSide :: Expression
     } deriving (Show)
