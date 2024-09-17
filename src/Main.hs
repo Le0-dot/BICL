@@ -4,11 +4,10 @@ import Data.Text.IO qualified as T
 import Data.Text qualified as T
 import Data.Void (Void)
 import System.Environment (getArgs)
-import Text.Megaparsec (MonadParsec (eof), between, errorBundlePretty, runParser, ParseErrorBundle)
+import Text.Megaparsec (errorBundlePretty, runParser, ParseErrorBundle)
 import Text.Megaparsec.Pos (mkPos)
 import Control.Monad.State (runStateT)
 import Types
-import Lexeme
 import Parser
 
 parse :: Parser a -> String -> T.Text -> Either (ParseErrorBundle T.Text Void) (a, ParserState)
@@ -18,7 +17,7 @@ main :: IO ()
 main = do
     [file] <- getArgs
     contents <- T.readFile file
-    let parser = between spaceConsumer (spaceConsumer >> eof) parseModule
+    let parser = parseModule
     let out = parse parser file contents
     case out of
         Left err -> putStrLn $ errorBundlePretty err

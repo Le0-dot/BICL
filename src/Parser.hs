@@ -2,8 +2,7 @@
 
 module Parser where
 
-import Data.Text qualified as T
-import Text.Megaparsec (choice, some, (<?>), try)
+import Text.Megaparsec (choice, some, (<?>), try, optional, MonadParsec (eof))
 import Text.Megaparsec.Debug (MonadParsecDbg(dbg))
 import Control.Applicative (many, (<|>))
 import Control.Monad.State (modify)
@@ -11,7 +10,7 @@ import Types
 import Lexeme
 
 parseModule :: Parser Module
-parseModule = Module <$> many (topLevel <* spaceConsumer)
+parseModule = Module <$> many (topLevel <* spaceConsumer) <* eof
 
 topLevel :: Parser TopLevel
 topLevel = nonIndented $ dbg "export statement" export <|> dbg "define statement" define
@@ -30,7 +29,7 @@ basicExpression :: Parser Expression
 basicExpression = choice
     [ dbg "function" $ FunctionExpression <$> function
     , dbg "block" $ BlockExpression <$> block
-    , dbg "let" $ LetExpression <$> letExpr
+    , dbg "let" $ LetExpression <$> parseLet
     , dbg "parenthesis" $ parens expression
     , dbg "assignment or identifier" identifierOrAssignment
     , dbg "constant" $ ConstantExpression <$> constant
@@ -57,8 +56,8 @@ constant = choice
     , IntegerConstant <$> integer
     ] <?> "constant"
 
-letExpr :: Parser Assignment
-letExpr = keyword "let" >> assignment <?> "let expression"
+parseLet :: Parser Assignment
+parseLet = keyword "let" >> assignment <?> "let expression"
 
 assignment :: Parser Assignment
 assignment = Assignment <$> identifier <* symbol "=" <*> expression <?> "assignment"
