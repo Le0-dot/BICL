@@ -28,8 +28,9 @@ data Expression
     deriving (Show)
 
 data Constant
-    = IntegerConstant Integer
-    | BooleanConstant Bool
+    = IntegerConstant  Integer
+    | FloatingConstant Double
+    | BooleanConstant  Bool
     deriving (Show)
 
 data Function = Function

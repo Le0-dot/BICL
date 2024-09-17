@@ -8,7 +8,7 @@ import Text.Megaparsec.Char (hspace1, alphaNumChar, char, letterChar, space1)
 import Text.Megaparsec.Char.Lexer qualified as L
 import Text.Megaparsec (between, MonadParsec (notFollowedBy, takeWhileP, try), chunk, (<?>), mkPos, unPos)
 import Text.Megaparsec.Pos (Pos)
-import Control.Applicative ( Alternative((<|>)), some )
+import Control.Applicative ( Alternative((<|>)), some, empty )
 import Control.Monad (void)
 import Control.Monad.State (get)
 import Types
@@ -72,8 +72,14 @@ bool :: Parser Bool
 bool = lexeme (False <$ keyword "false" <|> True <$ keyword "true" <?> "boolean constant")
 
 integer :: Parser Integer
-integer = lexeme $ bin <|> oct <|> hex <|> dec
+integer = lexeme $ signed $ bin <|> oct <|> hex <|> dec
     where bin = chunk "0b" >> L.binary <?> "binary integer constant"
           oct = chunk "0o" >> L.octal <?> "octal integer constant"
           hex = chunk "0x" >> L.hexadecimal <?> "hexadecimal integer constant"
           dec = L.decimal <?> "decimal integer constant"
+
+float :: Parser Double
+float = lexeme $ signed L.float
+
+signed :: Num a => Parser a -> Parser a
+signed = L.signed empty
