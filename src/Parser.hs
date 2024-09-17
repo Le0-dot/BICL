@@ -15,11 +15,8 @@ parseModule = Module <$> many (topLevel <* spaceConsumer)
 
 topLevel :: Parser TopLevel
 topLevel = nonIndented $ dbg "export statement" export <|> dbg "define statement" define
-    where export = keyword "export" >> uncurry Export <$> assignment <?> "export statement"
-          define = keyword "define" >> uncurry Define <$> assignment <?> "define statement"
-
-assignment :: Parser (T.Text, Expression)
-assignment = (,) <$> identifier <* symbol "=" <*> expression <?> "assignment"
+    where export = keyword "export" >> Export <$> assignment <?> "export statement"
+          define = keyword "define" >> Define <$> assignment <?> "define statement"
 
 expression :: Parser Expression
 expression = dbg "expression" $ do
@@ -35,6 +32,7 @@ basicExpression = choice
     , dbg "block" $ BlockExpression <$> block
     , dbg "let" $ LetExpression <$> letExpr
     , dbg "parenthesis" $ parens expression
+    , dbg "assignment" $ try $ AssignmentExpression <$> assignment
     , dbg "identifier" $ IdentifierExpression <$> identifier
     , dbg "constant" $ ConstantExpression <$> constant
     ] <?> "expression"
@@ -51,14 +49,17 @@ call :: Parser Call
 call = Call <$> dbg "callee" expression <*> dbg "arguments" (some expression) <?> "function call"
 
 block :: Parser [Expression]
-block = keyword "do" >> modify nextIndent >> indentSome expression <* modify prevIndent
+block = keyword "do" >> modify nextIndent >> indentSome expression <* modify prevIndent <?> "block expression"
 
 constant :: Parser Constant
 constant = choice
     [ BooleanConstant <$> bool
     , FloatingConstant <$> try float
     , IntegerConstant <$> integer
-    ]
+    ] <?> "constant"
 
-letExpr :: Parser Let
-letExpr = keyword "let" >> uncurry Let <$> assignment
+letExpr :: Parser Assignment
+letExpr = keyword "let" >> assignment <?> "let expression"
+
+assignment :: Parser Assignment
+assignment = Assignment <$> identifier <* symbol "=" <*> expression <?> "assignment"

@@ -14,8 +14,8 @@ newtype Module = Module
     } deriving (Show)
 
 data TopLevel
-    = Export T.Text Expression
-    | Define T.Text Expression
+    = Export Assignment
+    | Define Assignment
     deriving (Show)
 
 data Expression
@@ -24,7 +24,8 @@ data Expression
     | FunctionExpression   Function
     | CallExpression       Call
     | BlockExpression      [Expression]
-    | LetExpression        Let
+    | LetExpression        Assignment
+    | AssignmentExpression Assignment
     deriving (Show)
 
 data Constant
@@ -43,7 +44,7 @@ data Call = Call
     , callArguments :: [Expression]
     } deriving (Show)
 
-data Let = Let
-    { letVariableName  :: T.Text
-    , letRightHandSide :: Expression
+data Assignment = Assignment
+    { assignmentVariable :: T.Text
+    , assignmentValue    :: Expression
     } deriving (Show)
