@@ -3,7 +3,7 @@
 module Parser where
 
 import Data.Text qualified as T
-import Text.Megaparsec (choice, some, (<?>))
+import Text.Megaparsec (choice, some, (<?>), try)
 import Text.Megaparsec.Debug (MonadParsecDbg(dbg))
 import Control.Applicative (many, (<|>))
 import Control.Monad.State (modify)
@@ -55,8 +55,9 @@ block = keyword "do" >> modify nextIndent >> indentSome expression <* modify pre
 
 constant :: Parser Constant
 constant = choice
-    [ IntegerConstant <$> integer
-    , BooleanConstant <$> bool
+    [ BooleanConstant <$> bool
+    , FloatingConstant <$> try float
+    , IntegerConstant <$> integer
     ]
 
 letExpr :: Parser Let
