@@ -22,15 +22,22 @@ assignment :: Parser (T.Text, Expression)
 assignment = (,) <$> identifier <* symbol "=" <*> expression <?> "assignment"
 
 expression :: Parser Expression
-expression = dbg "expression" (choice
+expression = dbg "expression" $ do
+    first <- basicExpression
+    rest <- many basicExpression
+    return $ if null rest
+        then first
+        else CallExpression $ Call first rest
+
+basicExpression :: Parser Expression
+basicExpression = choice
     [ dbg "function" $ FunctionExpression <$> function
     , dbg "block" $ BlockExpression <$> block
     , dbg "let" $ LetExpression <$> letExpr
     , dbg "parenthesis" $ parens expression
     , dbg "identifier" $ IdentifierExpression <$> identifier
     , dbg "constant" $ ConstantExpression <$> constant
-    , dbg "call" $ CallExpression <$> call
-    ] <?> "expression")
+    ] <?> "expression"
 
 function :: Parser Function
 function = do
