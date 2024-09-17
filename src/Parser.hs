@@ -32,8 +32,7 @@ basicExpression = choice
     , dbg "block" $ BlockExpression <$> block
     , dbg "let" $ LetExpression <$> letExpr
     , dbg "parenthesis" $ parens expression
-    , dbg "assignment" $ try $ AssignmentExpression <$> assignment
-    , dbg "identifier" $ IdentifierExpression <$> identifier
+    , dbg "assignment or identifier" identifierOrAssignment
     , dbg "constant" $ ConstantExpression <$> constant
     ] <?> "expression"
 
@@ -63,3 +62,11 @@ letExpr = keyword "let" >> assignment <?> "let expression"
 
 assignment :: Parser Assignment
 assignment = Assignment <$> identifier <* symbol "=" <*> expression <?> "assignment"
+
+identifierOrAssignment :: Parser Expression
+identifierOrAssignment = do
+    ident <- identifier
+    assign <- optional $ symbol "=" >> expression
+    return $ case assign of
+        Just expr -> AssignmentExpression $ Assignment ident expr
+        Nothing -> IdentifierExpression ident
