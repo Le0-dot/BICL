@@ -1,4 +1,4 @@
-module Types where
+module Parser.Types where
 
 import Data.Text qualified as T
 import Data.Void (Void)

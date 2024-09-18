@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lexeme where
+module Parser.Lexer where
 
 import Data.Text qualified as T
 import Data.Char (isAlphaNum)
@@ -11,7 +11,7 @@ import Text.Megaparsec.Pos (Pos)
 import Control.Applicative ( Alternative((<|>)), some, empty )
 import Control.Monad (void)
 import Control.Monad.State (get)
-import Types
+import Parser.Types
 
 (<||>) :: (a -> Bool) -> (a -> Bool) -> (a -> Bool)
 (<||>) = liftA2 (||)

@@ -15,9 +15,9 @@ common warnings
 executable BICL
     import:           warnings
     main-is:          Main.hs
-    other-modules:    Types
-                    , Lexeme
-                    , Parser
+    other-modules:    Parser
+                    , Parser.Lexer
+                    , Parser.Types
     build-depends:    base ^>=4.19.1.0
                     , megaparsec
                     , text

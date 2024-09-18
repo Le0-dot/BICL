@@ -2,12 +2,18 @@
 
 module Parser where
 
-import Text.Megaparsec (choice, some, (<?>), try, optional, MonadParsec (eof))
+import Data.Text qualified as T
+import Data.Void (Void)
+import Text.Megaparsec (choice, some, (<?>), try, optional, MonadParsec (eof), runParser, mkPos)
+import Text.Megaparsec.Error (ParseErrorBundle)
 import Text.Megaparsec.Debug (MonadParsecDbg(dbg))
 import Control.Applicative (many, (<|>))
-import Control.Monad.State (modify)
-import Types
-import Lexeme
+import Control.Monad.State (modify, runStateT)
+import Parser.Types
+import Parser.Lexer
+
+parse :: Parser a -> String -> T.Text -> Either (ParseErrorBundle T.Text Void) (a, ParserState)
+parse parser = runParser (runStateT parser (mkPos 1))
 
 parseModule :: Parser Module
 parseModule = Module <$> many (topLevel <* spaceConsumer) <* eof
