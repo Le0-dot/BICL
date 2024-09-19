@@ -1,9 +1,8 @@
 module TypeDeduction.Types where
 
-import Data.Set as S
 import Data.Map.Strict
 import Data.Text (Text)
-import Control.Monad.State (State, MonadState (get, put), gets)
+import Control.Monad.State (State, MonadState (get, put), gets, modify)
 
 data Type
     = IntegerType
@@ -22,7 +21,7 @@ data TypeConstraint = TypeConstraint
 
 data InferenceState = InferenceState
     { inferenceEnvironment  :: Environment
-    , inferenceConstaints   :: Set TypeConstraint
+    , inferenceConstaints   :: [TypeConstraint]
     , inferenceTypeVarState :: Int
     } deriving (Show)
 
@@ -44,10 +43,7 @@ envInsert key val = do
     return val
 
 addConstraint :: TypeConstraint -> Inference ()
-addConstraint constraint = do
-    state <- get
-    let newConstraints = S.insert constraint $ inferenceConstaints state
-    put state {inferenceConstaints = newConstraints}
+addConstraint constraint = modify $ \state -> state {inferenceConstaints = constraint : inferenceConstaints state}
 
 newTypeVar :: Inference Type
 newTypeVar = do
