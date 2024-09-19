@@ -37,8 +37,8 @@ basicExpression = choice
     , dbg "block" $ BlockExpression <$> block
     , dbg "let" $ LetExpression <$> parseLet
     , dbg "parenthesis" $ parens expression
-    , dbg "assignment or identifier" identifierOrAssignment
     , dbg "constant" $ ConstantExpression <$> constant
+    , dbg "assignment or identifier" identifierOrAssignment
     ] <?> "expression"
 
 function :: Parser Function
