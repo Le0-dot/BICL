@@ -8,7 +8,7 @@ data Type
     = IntegerType
     | FloatingType
     | BooleanType
-    | FunctionType Type Type
+    | FunctionType {functionIn :: Type, functionOut :: Type}
     | TypeVariable Int
     deriving (Show, Eq, Ord)
 
@@ -19,6 +19,11 @@ data TypeConstraint = TypeConstraint
     , constraintRHS :: Type
     } deriving (Show, Eq, Ord)
 
+data Substitution = Substitution
+    { substitutionSubject :: Type
+    , substitute          :: Type
+    } deriving (Show)
+
 data InferenceState = InferenceState
     { inferenceEnvironment  :: Environment
     , inferenceConstaints   :: [TypeConstraint]
@@ -26,6 +31,14 @@ data InferenceState = InferenceState
     } deriving (Show)
 
 type Inference = State InferenceState
+
+isFunction :: Type -> Bool
+isFunction (FunctionType _ _) = True
+isFunction _ = False
+
+isTypeVar :: Type -> Bool
+isTypeVar (TypeVariable _) = True
+isTypeVar _ = False
 
 envFind :: Text -> Inference Type
 envFind key = do
