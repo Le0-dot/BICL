@@ -19,11 +19,11 @@ inferConstant (FloatingConstant _) = return FloatingType
 inferConstant (BooleanConstant _) = return BooleanType
 
 inferIdentifier :: T.Text -> Inference Type
-inferIdentifier = envFind
+inferIdentifier name = envFind name >>= instantiate
 
 inferFunction :: Function -> Inference Type
 inferFunction (Function args body) = do
-    let inferArg arg = newTypeVar >>= envInsert arg
+    let inferArg arg = newTypeVar >>= envInsert arg . TypeVar
     argTypes <- mapM inferArg args
     bodyType <- inferExpression body
     return $ foldr FunctionType bodyType argTypes
@@ -32,7 +32,7 @@ inferCall :: Call -> Inference Type
 inferCall (Call callee args) = do
     calleeType <- inferExpression callee
     argTypes <- mapM inferExpression args
-    resultType <- newTypeVar
+    resultType <- TypeVar <$> newTypeVar
     let appliedCalleeType = foldr FunctionType resultType argTypes
     addConstraint $ TypeConstraint calleeType appliedCalleeType
     return resultType
@@ -54,3 +54,11 @@ inferAssignment (Assignment variable expression) = do
     exprType <- inferExpression expression
     addConstraint $ TypeConstraint varType exprType
     return varType
+
+instantiate :: Scheme -> Inference Type
+instantiate (Scheme [] t) = return t
+instantiate (Scheme vars t) = do
+    typeVars <- mapM (const newTypeVar) vars
+    let mappings = zipWith (\x y -> (TypeVar x, TypeVar y)) vars typeVars
+    let replaceTypeVars var = foldl (\x (from, to) -> if x == from then to else x) var mappings
+    return $ mapType replaceTypeVars t

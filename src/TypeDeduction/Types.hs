@@ -9,27 +9,34 @@ data Type
     | FloatingType
     | BooleanType
     | FunctionType {functionIn :: Type, functionOut :: Type}
-    | TypeVariable Int
-    deriving (Show, Eq, Ord)
+    | TypeVar      TypeVariable
+    deriving (Show, Eq)
 
-type Environment = Map Text Type
+type TypeVariable = Int
+
+data Scheme = Scheme
+    { schemeVars :: [TypeVariable]
+    , schemeType :: Type
+    } deriving (Show, Eq)
+
+type Environment = Map Text Scheme
 
 data TypeConstraint = TypeConstraint
     { constraintLHS :: Type
     , constraintRHS :: Type
-    } deriving (Show, Eq, Ord)
+    } deriving (Show, Eq)
 
 data Substitution = Substitution Type Type deriving (Show)
 
 data InferenceState = InferenceState
     { inferenceEnvironment  :: Environment
     , inferenceConstaints   :: [TypeConstraint]
-    , inferenceTypeVarState :: Int
+    , inferenceTypeVarState :: TypeVariable
     } deriving (Show)
 
 type Inference = State InferenceState
 
-envFind :: Text -> Inference Type
+envFind :: Text -> Inference Scheme
 envFind key = do
     env <- gets inferenceEnvironment
     case env !? key of
@@ -40,6 +47,14 @@ envInsert :: Text -> Type -> Inference Type
 envInsert key val = do
     state <- get
     let err = error ("Type deduction failed: " ++ show key ++ " already bound")
+    let env = insertWith err key (Scheme [] val) $ inferenceEnvironment state
+    put state {inferenceEnvironment = env}
+    return val
+
+envInsertScheme :: Text -> Scheme -> Inference Scheme
+envInsertScheme key val = do
+    state <- get
+    let err = error ("Type deduction failed: " ++ show key ++ " already bound")
     let env = insertWith err key val $ inferenceEnvironment state
     put state {inferenceEnvironment = env}
     return val
@@ -47,16 +62,19 @@ envInsert key val = do
 addConstraint :: TypeConstraint -> Inference ()
 addConstraint constraint = modify $ \state -> state {inferenceConstaints = constraint : inferenceConstaints state}
 
-newTypeVar :: Inference Type
+newTypeVar :: Inference TypeVariable
 newTypeVar = do
     state <- get
     let var = inferenceTypeVarState state
     put state {inferenceTypeVarState = var + 1}
-    return $ TypeVariable var
+    return var
 
 mapType :: (Type -> Type) -> Type -> Type
 mapType f (FunctionType arg out) = FunctionType (mapType f arg) (mapType f out)
 mapType f t = f t
+
+mapScheme :: (Type -> Type) -> Scheme -> Scheme
+mapScheme f (Scheme vars t) = Scheme vars (mapType f t)
 
 mapConstraint :: (Type -> Type) -> TypeConstraint -> TypeConstraint
 mapConstraint f (TypeConstraint left right) = TypeConstraint (f left) (f right)

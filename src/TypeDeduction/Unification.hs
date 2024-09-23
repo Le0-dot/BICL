@@ -27,11 +27,11 @@ areFunctions _ _ = False
 
 validTypeVar :: Type -> Type -> Bool
 validTypeVar left right = isTypeVar left && (not . isTypeVar) right && left `notPartOf` right
-    where isTypeVar (TypeVariable _) = True
+    where isTypeVar (TypeVar _) = True
           isTypeVar _ = False
 
 notPartOf :: Type -> Type -> Bool
-notPartOf left (FunctionType arg out) = notPartOf left arg && notPartOf left out
+notPartOf left (FunctionType arg out) = left `notPartOf` arg && left `notPartOf` out
 notPartOf left right = left /= right
 
 noSubstitution :: [TypeConstraint] -> ([TypeConstraint], Maybe Substitution)
