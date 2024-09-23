@@ -19,10 +19,7 @@ data TypeConstraint = TypeConstraint
     , constraintRHS :: Type
     } deriving (Show, Eq, Ord)
 
-data Substitution = Substitution
-    { substitutionSubject :: Type
-    , substitute          :: Type
-    } deriving (Show)
+data Substitution = Substitution Type Type deriving (Show)
 
 data InferenceState = InferenceState
     { inferenceEnvironment  :: Environment
@@ -31,14 +28,6 @@ data InferenceState = InferenceState
     } deriving (Show)
 
 type Inference = State InferenceState
-
-isFunction :: Type -> Bool
-isFunction (FunctionType _ _) = True
-isFunction _ = False
-
-isTypeVar :: Type -> Bool
-isTypeVar (TypeVariable _) = True
-isTypeVar _ = False
 
 envFind :: Text -> Inference Type
 envFind key = do
@@ -64,3 +53,10 @@ newTypeVar = do
     let var = inferenceTypeVarState state
     put state {inferenceTypeVarState = var + 1}
     return $ TypeVariable var
+
+mapType :: (Type -> Type) -> Type -> Type
+mapType f (FunctionType arg out) = FunctionType (mapType f arg) (mapType f out)
+mapType f t = f t
+
+mapConstraint :: (Type -> Type) -> TypeConstraint -> TypeConstraint
+mapConstraint f (TypeConstraint left right) = TypeConstraint (f left) (f right)
