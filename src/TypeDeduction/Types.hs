@@ -7,13 +7,29 @@ import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
 import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping)
 
-data Type
+data BinaryTree a
+    = Leaf a
+    | BinaryNode (BinaryTree a) (BinaryTree a)
+    deriving (Show, Eq, Functor, Foldable)
+
+mapLeafs :: (BinaryTree a -> BinaryTree b) -> BinaryTree a -> BinaryTree b
+mapLeafs f node@(Leaf _) = f node
+mapLeafs f (BinaryNode l r) = BinaryNode (mapLeafs f l) (mapLeafs f r)
+
+data BasicType
     = IntegerType
     | FloatingType
     | BooleanType
-    | FunctionType {functionIn :: Type, functionOut :: Type}
-    | TypeVar      TypeVariable
+    | TypeVar TypeVariable
     deriving (Show, Eq)
+
+type Type = BinaryTree BasicType
+
+basicType :: BasicType -> Type
+basicType = Leaf
+
+functionType :: Type -> Type -> Type
+functionType = BinaryNode
 
 type TypeVariable = Int
 
