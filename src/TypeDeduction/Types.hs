@@ -40,16 +40,16 @@ data Scheme = Scheme
 
 type Environment = Scope (Text, Scheme)
 
-data TypeConstraint = TypeConstraint
-    { constraintLHS :: Type
-    , constraintRHS :: Type
-    } deriving (Show, Eq)
+type TypeConstraint = (Type, Type)
 
-data Substitution = Substitution Type Type deriving (Show)
+typeConstraint :: Type -> Type -> TypeConstraint
+typeConstraint = (,)
+
+data Substitution = Substitution TypeVariable Type deriving (Show)
 
 data InferenceState = InferenceState
     { inferenceEnvironment  :: Environment
-    , inferenceConstaints   :: [TypeConstraint]
+    , inferenceConstraints  :: [TypeConstraint]
     , inferenceTypeVarState :: TypeVariable
     } deriving (Show)
 
@@ -79,7 +79,7 @@ envInsertScheme k v = do
         Just e -> put state {inferenceEnvironment = e} >> return v
 
 addConstraint :: TypeConstraint -> Inference ()
-addConstraint constraint = modify $ \state -> state {inferenceConstaints = constraint : inferenceConstaints state}
+addConstraint constraint = modify $ \state -> state {inferenceConstraints = constraint : inferenceConstraints state}
 
 newTypeVar :: Inference TypeVariable
 newTypeVar = do
@@ -88,12 +88,5 @@ newTypeVar = do
     put state {inferenceTypeVarState = var + 1}
     return var
 
-mapType :: (Type -> Type) -> Type -> Type
-mapType f (FunctionType arg out) = FunctionType (mapType f arg) (mapType f out)
-mapType f t = f t
-
-mapScheme :: (Type -> Type) -> Scheme -> Scheme
-mapScheme f (Scheme vars t) = Scheme vars (mapType f t)
-
-mapConstraint :: (Type -> Type) -> TypeConstraint -> TypeConstraint
-mapConstraint f (TypeConstraint left right) = TypeConstraint (f left) (f right)
+mapScheme :: (BasicType -> BasicType) -> Scheme -> Scheme
+mapScheme f (Scheme vars t) = Scheme vars (f <$> t)

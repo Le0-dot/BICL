@@ -32,9 +32,9 @@ inferCall :: Call -> Inference Type
 inferCall (Call callee args) = do
     calleeType <- inferExpression callee
     argTypes <- mapM inferExpression args
-    addConstraint $ TypeConstraint calleeType appliedCalleeType
     resultType <- basicType . TypeVar <$> newTypeVar
     let appliedCalleeType = foldr functionType resultType argTypes
+    addConstraint $ typeConstraint calleeType appliedCalleeType
     return resultType
 
 inferBlock :: [Expression] -> Inference Type
@@ -52,7 +52,7 @@ inferAssignment :: Assignment -> Inference Type
 inferAssignment (Assignment variable expression) = do
     varType <- inferIdentifier variable
     exprType <- inferExpression expression
-    addConstraint $ TypeConstraint varType exprType
+    addConstraint $ typeConstraint varType exprType
     return varType
 
 instantiate :: Scheme -> Inference Type
