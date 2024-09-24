@@ -20,6 +20,7 @@ executable BICL
                     , Parser.Types
                     , TypeDeduction
                     , TypeDeduction.Types
+                    , TypeDeduction.Scope
                     , TypeDeduction.Inference
                     , TypeDeduction.Unification
     build-depends:    base ^>=4.19.1.0

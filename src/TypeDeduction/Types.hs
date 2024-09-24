@@ -1,13 +1,11 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DatatypeContexts #-}
 
 module TypeDeduction.Types where
 
 import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
-import Data.Foldable (find)
-import qualified Data.Kind as K
+import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping)
 
 data Type
     = IntegerType
@@ -23,36 +21,6 @@ data Scheme = Scheme
     { schemeVars :: [TypeVariable]
     , schemeType :: Type
     } deriving (Show, Eq)
-
-data Scope kv = Scope
-    { scopeMappings :: [kv] -- Since there should not be many elements Map is not necessary
-    , outerScope    :: Maybe (Scope kv)
-    } deriving (Show, Functor, Foldable)
-
-class KeyValueItem (kv :: K.Type -> K.Type -> K.Type) where
-    keyValue :: k -> v -> kv k v
-    key :: kv k v -> k
-    value :: kv k v -> v
-
-instance KeyValueItem (,) where
-    keyValue = (,)
-    key = fst
-    value = snd
-
-pushScope :: Scope kv -> Scope kv
-pushScope = Scope [] . Just
-
-popScope :: Scope kv -> Maybe (Scope kv)
-popScope = outerScope
-
-addMapping :: (KeyValueItem kv, Eq k) => k -> v -> Scope (kv k v) -> Maybe (Scope (kv k v))
-addMapping k v scope@(Scope mappings outer) =
-    case findMapping k scope of
-        Nothing -> Just $ Scope (keyValue k v:mappings) outer
-        Just _ -> Nothing
-
-findMapping :: (KeyValueItem kv, Eq k) => k -> Scope (kv k v) -> Maybe (kv k v)
-findMapping k = find ((== k) . key)
 
 type Environment = Scope (Text, Scheme)
 
