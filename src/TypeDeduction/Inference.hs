@@ -28,7 +28,7 @@ inferIdentifier :: T.Text -> Inference Type
 inferIdentifier name = envFind name >>= instantiate
 
 inferFunction :: Function -> Inference Type
-inferFunction (Function args body) = do
+inferFunction (Function args body) = envScope $ do
     let inferArg arg = newTypeVar >>= envInsert arg . basicType . TypeVar
     argTypes <- mapM inferArg args
     bodyType <- inferExpression body
@@ -44,9 +44,10 @@ inferCall (Call callee args) = do
     return resultType
 
 inferBlock :: [Expression] -> Inference Type
-inferBlock [] = undefined -- blocks are never empty, and if they are than parser is failing
-inferBlock [expr] = inferExpression expr
-inferBlock (expr:rest) = inferExpression expr >> inferBlock rest
+inferBlock l = envScope $ inferExpressions l
+    where inferExpressions [expr] = inferExpression expr
+          inferExpressions (expr:rest) = inferExpression expr >> inferExpressions rest
+          inferExpressions [] = undefined -- blocks are never empty, and if they are than parser is failing
 
 inferLet :: Assignment -> Inference Scheme
 inferLet (Assignment variable expression) = do
@@ -66,8 +67,8 @@ inferAssignment (Assignment variable expression) = do
 instantiate :: Scheme -> Inference Type
 instantiate (Scheme [] t) = return t
 instantiate (Scheme vars t) = do
-    typeVars <- mapM (const newTypeVar) vars
-    let substitutions = zipWith (\from to -> Substitution from $ basicType $ TypeVar to) vars typeVars
+    typeVars <- mapM ((basicType . TypeVar <$>) . const newTypeVar) vars
+    let substitutions = zipWith Substitution vars typeVars
     return $ mapLeafs (substituteAny substitutions) t
 
 generalize :: [TypeConstraint] -> Type -> Inference Scheme

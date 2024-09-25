@@ -5,7 +5,7 @@ module TypeDeduction.Types where
 
 import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
-import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping)
+import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping, pushScope, popScope)
 import Data.Bifunctor (Bifunctor(second))
 
 data BinaryTree a
@@ -62,6 +62,15 @@ modifyEnv f = modify $ \s -> s {inferenceEnvironment = f $ inferenceEnvironment 
 
 mapEnv :: (Type -> Type) -> Environment -> Environment
 mapEnv f = fmap $ second (\s -> s {schemeType = f (schemeType s)})
+
+envScope :: Inference a -> Inference a
+envScope inf = do
+    modifyEnv pushScope
+    res <- inf
+    modifyEnv $ \s -> case popScope s of
+        Just scope -> scope
+        Nothing -> error "something gone terribly wrong: no more scopes to pop, do not manually use popScope"
+    return res
 
 envFind :: Text -> Inference Scheme
 envFind k = do
