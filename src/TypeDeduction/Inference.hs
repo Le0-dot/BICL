@@ -3,6 +3,11 @@ module TypeDeduction.Inference where
 import qualified Data.Text as T
 import TypeDeduction.Types
 import Parser.Types
+import TypeDeduction.Unification (unify, substituteAny)
+import Control.Monad.State (gets)
+import Data.List ((\\), group, sort)
+import Data.Maybe (listToMaybe, mapMaybe, maybeToList)
+import TypeDeduction.Scope (value)
 
 inferExpression :: Expression -> Inference Type
 inferExpression (ConstantExpression c) = inferConstant c
@@ -10,7 +15,8 @@ inferExpression (IdentifierExpression i) = inferIdentifier i
 inferExpression (FunctionExpression f) = inferFunction f
 inferExpression (CallExpression c) = inferCall c
 inferExpression (BlockExpression b) = inferBlock b
-inferExpression (LetExpression l) = inferLet l
+-- TODO: Let is not an expression
+inferExpression (LetExpression l) = schemeType <$> inferLet l
 inferExpression (AssignmentExpression a) = inferAssignment a
 
 inferConstant :: Constant -> Inference Type
@@ -42,12 +48,14 @@ inferBlock [] = undefined -- blocks are never empty, and if they are than parser
 inferBlock [expr] = inferExpression expr
 inferBlock (expr:rest) = inferExpression expr >> inferBlock rest
 
--- TODO: Add TypeVariable polimorphism to functions
-inferLet :: Assignment -> Inference Type
+inferLet :: Assignment -> Inference Scheme
 inferLet (Assignment variable expression) = do
     exprType <- inferExpression expression
-    envInsert variable exprType
+    lastConstraint <- gets $ maybeToList . listToMaybe . inferenceConstraints -- TODO: Change API to return new constraints (there could be more than 1)
+    exprScheme <- generalize lastConstraint exprType
+    envInsertScheme variable exprScheme
 
+-- TODO: Narrowing of scheme
 inferAssignment :: Assignment -> Inference Type
 inferAssignment (Assignment variable expression) = do
     varType <- inferIdentifier variable
@@ -59,6 +67,28 @@ instantiate :: Scheme -> Inference Type
 instantiate (Scheme [] t) = return t
 instantiate (Scheme vars t) = do
     typeVars <- mapM (const newTypeVar) vars
-    let mappings = zipWith (\x y -> (TypeVar x, TypeVar y)) vars typeVars
-    let replaceTypeVars var = foldl (\x (from, to) -> if x == from then to else x) var mappings
-    return $ replaceTypeVars <$> t
+    let substitutions = zipWith (\from to -> Substitution from $ basicType $ TypeVar to) vars typeVars
+    return $ mapLeafs (substituteAny substitutions) t
+
+generalize :: [TypeConstraint] -> Type -> Inference Scheme
+generalize constraints t = do
+    -- 1. Solve constraints
+    let substitutions = unify constraints
+
+    -- 2. Update environment and type
+    modifyEnv $ mapEnv $ mapLeafs $ substituteAny substitutions
+    let newT = mapLeafs (substituteAny substitutions) t
+
+    -- 3. Find type variables in type and in environment
+    let extractTypeVars x = case x of
+            TypeVar v -> [v]
+            _ -> []
+    let tTypeVars = foldMap extractTypeVars newT
+    envTypeVars <- gets $ foldMap (schemeVars . value) . inferenceEnvironment
+
+    -- 4. Type variable present in type and not in environment could be generalized in type scheme
+    let freeTypeVars = unique tTypeVars \\ unique envTypeVars
+    return $ Scheme freeTypeVars newT
+
+unique :: Ord a => [a] -> [a]
+unique = mapMaybe listToMaybe . group . sort

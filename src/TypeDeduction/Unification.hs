@@ -7,9 +7,11 @@ import Data.Bifunctor (Bifunctor(bimap))
 
 unify :: [TypeConstraint] -> [Substitution]
 unify [] = []
-unify (constraint:rest) = maybeToList sub ++ unify newConstraints
+unify (constraint:rest) = maybeToList sub ++ unify (substituteConstraints (new ++ rest))
     where (new, sub) = reduce constraint
-          newConstraints = substitute sub (new ++ rest)
+          substituteConstraints cs = case sub of
+            Just s -> both (substitute s) <$> cs
+            Nothing -> cs
 
 reduce :: TypeConstraint -> ([TypeConstraint], Maybe Substitution)
 reduce (left, right)
@@ -22,11 +24,14 @@ reduce (left, right@(Leaf (TypeVar var)))
     | right `notPartOf` left = ([], Just $ Substitution var left)
 reduce _ = error "Impossible to deduce types"
 
-substitute :: Maybe Substitution -> [TypeConstraint] -> [TypeConstraint]
-substitute Nothing = id
-substitute (Just (Substitution old new)) = fmap $ bimap (mapLeafs sub) (mapLeafs sub)
-    -- in each type constraint for each of 2 types replace all type variable that match substitution
-    where sub x = if x == basicType (TypeVar old) then new else x
+substitute :: Substitution -> Type -> Type
+substitute (Substitution from to) = mapLeafs (\x -> if x == basicType (TypeVar from) then to else x)
+
+substituteAny :: [Substitution] -> Type -> Type
+substituteAny = flip $ foldl (flip substitute)
 
 notPartOf :: Type -> Type -> Bool
 notPartOf left = getAll . foldMap (All . (/= left) . basicType)
+
+both :: Bifunctor f => (a -> b) -> f a a -> f b b
+both f = bimap f f

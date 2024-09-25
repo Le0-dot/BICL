@@ -6,6 +6,7 @@ module TypeDeduction.Types where
 import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
 import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping)
+import Data.Bifunctor (Bifunctor(second))
 
 data BinaryTree a
     = Leaf a
@@ -40,6 +41,7 @@ data Scheme = Scheme
 
 type Environment = Scope (Text, Scheme)
 
+-- TypeConstraint represents constraint where left value should be equal to second
 type TypeConstraint = (Type, Type)
 
 typeConstraint :: Type -> Type -> TypeConstraint
@@ -54,6 +56,12 @@ data InferenceState = InferenceState
     } deriving (Show)
 
 type Inference = State InferenceState
+
+modifyEnv :: (Environment -> Environment) -> Inference ()
+modifyEnv f = modify $ \s -> s {inferenceEnvironment = f $ inferenceEnvironment s}
+
+mapEnv :: (Type -> Type) -> Environment -> Environment
+mapEnv f = fmap $ second (\s -> s {schemeType = f (schemeType s)})
 
 envFind :: Text -> Inference Scheme
 envFind k = do
