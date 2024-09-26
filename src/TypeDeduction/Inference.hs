@@ -8,6 +8,8 @@ import Control.Monad.State (gets)
 import Data.List ((\\), group, sort)
 import Data.Maybe (listToMaybe, mapMaybe, maybeToList)
 import TypeDeduction.Scope (value)
+import Data.Semigroup (Semigroup(sconcat))
+import Data.List.NonEmpty (NonEmpty((:|)))
 
 inferExpression :: Expression -> Inference Type
 inferExpression (ConstantExpression c) = inferConstant c
@@ -20,26 +22,26 @@ inferExpression (LetExpression l) = schemeType <$> inferLet l
 inferExpression (AssignmentExpression a) = inferAssignment a
 
 inferConstant :: Constant -> Inference Type
-inferConstant (IntegerConstant _) = return $ basicType IntegerType
-inferConstant (FloatingConstant _) = return $ basicType FloatingType
-inferConstant (BooleanConstant _) = return $ basicType BooleanType
+inferConstant (IntegerConstant _) = return $ return IntegerType
+inferConstant (FloatingConstant _) = return $ return FloatingType
+inferConstant (BooleanConstant _) = return $ return BooleanType
 
 inferIdentifier :: T.Text -> Inference Type
 inferIdentifier name = envFind name >>= instantiate
 
 inferFunction :: Function -> Inference Type
 inferFunction (Function args body) = envScope $ do
-    let inferArg arg = newTypeVar >>= envInsert arg . basicType . TypeVar
+    let inferArg arg = newTypeVar >>= envInsert arg . return . TypeVar
     argTypes <- mapM inferArg args
     bodyType <- inferExpression body
-    return $ foldr functionType bodyType argTypes
+    return $ sconcat $ bodyType :| argTypes
 
 inferCall :: Call -> Inference Type
 inferCall (Call callee args) = do
     calleeType <- inferExpression callee
     argTypes <- mapM inferExpression args
-    resultType <- basicType . TypeVar <$> newTypeVar
-    let appliedCalleeType = foldr functionType resultType argTypes
+    resultType <- return . TypeVar <$> newTypeVar
+    let appliedCalleeType = sconcat $ resultType :| argTypes
     addConstraint $ typeConstraint calleeType appliedCalleeType
     return resultType
 
@@ -67,9 +69,9 @@ inferAssignment (Assignment variable expression) = do
 instantiate :: Scheme -> Inference Type
 instantiate (Scheme [] t) = return t
 instantiate (Scheme vars t) = do
-    typeVars <- mapM ((basicType . TypeVar <$>) . const newTypeVar) vars
+    typeVars <- mapM ((return . TypeVar <$>) . const newTypeVar) vars
     let substitutions = zipWith Substitution vars typeVars
-    return $ mapLeafs (substituteAny substitutions) t
+    return $ substituteAny substitutions t
 
 generalize :: [TypeConstraint] -> Type -> Inference Scheme
 generalize constraints t = do
@@ -77,8 +79,8 @@ generalize constraints t = do
     let substitutions = unify constraints
 
     -- 2. Update environment and type
-    modifyEnv $ mapEnv $ mapLeafs $ substituteAny substitutions
-    let newT = mapLeafs (substituteAny substitutions) t
+    modifyEnv $ mapEnv $ substituteAny substitutions
+    let newT = substituteAny substitutions t
 
     -- 3. Find type variables in type and in environment
     let extractTypeVars x = case x of

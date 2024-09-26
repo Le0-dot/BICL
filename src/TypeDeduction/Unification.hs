@@ -1,6 +1,6 @@
 module TypeDeduction.Unification where
 
-import TypeDeduction.Types (Substitution (Substitution), Type, TypeConstraint, BinaryTree (Leaf, BinaryNode), BasicType (..), typeConstraint, basicType, mapLeafs)
+import TypeDeduction.Types (Substitution (Substitution), Type, TypeConstraint, BinaryTree (Leaf, BinaryNode), BasicType (..), typeConstraint)
 import Data.Maybe (maybeToList)
 import Data.Monoid (All (All, getAll))
 import Data.Bifunctor (Bifunctor(bimap))
@@ -25,13 +25,13 @@ reduce (left, right@(Leaf (TypeVar var)))
 reduce _ = error "Impossible to deduce types"
 
 substitute :: Substitution -> Type -> Type
-substitute (Substitution from to) = mapLeafs (\x -> if x == basicType (TypeVar from) then to else x)
+substitute (Substitution from to) = (=<<) (\x -> if x == TypeVar from then to else return x)
 
 substituteAny :: [Substitution] -> Type -> Type
 substituteAny = flip $ foldl (flip substitute)
 
 notPartOf :: Type -> Type -> Bool
-notPartOf left = getAll . foldMap (All . (/= left) . basicType)
+notPartOf left = getAll . foldMap (All . (/= left) . return)
 
 both :: Bifunctor f => (a -> b) -> f a a -> f b b
 both f = bimap f f

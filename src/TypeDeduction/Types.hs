@@ -13,9 +13,18 @@ data BinaryTree a
     | BinaryNode (BinaryTree a) (BinaryTree a)
     deriving (Show, Eq, Functor, Foldable)
 
-mapLeafs :: (BinaryTree a -> BinaryTree b) -> BinaryTree a -> BinaryTree b
-mapLeafs f node@(Leaf _) = f node
-mapLeafs f (BinaryNode l r) = BinaryNode (mapLeafs f l) (mapLeafs f r)
+instance Semigroup (BinaryTree a) where
+    (<>) = BinaryNode
+
+instance Applicative BinaryTree where
+    pure = Leaf
+    Leaf f           <*> t                = f <$> t
+    BinaryNode f1 f2 <*> Leaf r           = BinaryNode (($ r) <$> f1) (($ r) <$> f2)
+    BinaryNode f1 f2 <*> BinaryNode v1 v2 = BinaryNode (f1 <*> v1) (f2 <*> v2)
+
+instance Monad BinaryTree where
+    Leaf a >>= f = f a
+    BinaryNode a b >>= f = BinaryNode (a >>= f) (b >>= f)
 
 data BasicType
     = IntegerType
@@ -26,12 +35,6 @@ data BasicType
 
 type Type = BinaryTree BasicType
 
-basicType :: BasicType -> Type
-basicType = Leaf
-
-functionType :: Type -> Type -> Type
-functionType = BinaryNode
-
 type TypeVariable = Int
 
 data Scheme = Scheme
@@ -41,7 +44,8 @@ data Scheme = Scheme
 
 type Environment = Scope (Text, Scheme)
 
--- TypeConstraint represents constraint where left value should be equal to second
+-- TypeConstraint represents constraint where the left value should be equal to the right
+-- i.e. a = int, bool = b, c -> int = d, etc.
 type TypeConstraint = (Type, Type)
 
 typeConstraint :: Type -> Type -> TypeConstraint
