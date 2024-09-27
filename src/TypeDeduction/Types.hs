@@ -1,30 +1,10 @@
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
-
 module TypeDeduction.Types where
 
 import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
 import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping, pushScope, popScope)
 import Data.Bifunctor (Bifunctor(second))
-
-data BinaryTree a
-    = Leaf a
-    | BinaryNode (BinaryTree a) (BinaryTree a)
-    deriving (Show, Eq, Functor, Foldable)
-
-instance Semigroup (BinaryTree a) where
-    (<>) = BinaryNode
-
-instance Applicative BinaryTree where
-    pure = Leaf
-    Leaf f           <*> t                = f <$> t
-    BinaryNode f1 f2 <*> Leaf r           = BinaryNode (($ r) <$> f1) (($ r) <$> f2)
-    BinaryNode f1 f2 <*> BinaryNode v1 v2 = BinaryNode (f1 <*> v1) (f2 <*> v2)
-
-instance Monad BinaryTree where
-    Leaf a >>= f = f a
-    BinaryNode a b >>= f = BinaryNode (a >>= f) (b >>= f)
+import Data.BinaryTree (BinaryTree)
 
 data BasicType
     = IntegerType

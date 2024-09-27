@@ -23,6 +23,7 @@ executable BICL
                     , TypeDeduction.Scope
                     , TypeDeduction.Inference
                     , TypeDeduction.Unification
+                    , Data.BinaryTree
     build-depends:    base ^>=4.19.1.0
                     , megaparsec
                     , text

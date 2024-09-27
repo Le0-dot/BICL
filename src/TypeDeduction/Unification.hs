@@ -1,9 +1,10 @@
 module TypeDeduction.Unification where
 
-import TypeDeduction.Types (Substitution (Substitution), Type, TypeConstraint, BinaryTree (Leaf, BinaryNode), BasicType (..), typeConstraint)
+import TypeDeduction.Types (Substitution (Substitution), Type, TypeConstraint, BasicType (..), typeConstraint)
 import Data.Maybe (maybeToList)
 import Data.Monoid (All (All, getAll))
 import Data.Bifunctor (Bifunctor(bimap))
+import Data.BinaryTree (BinaryTree(..))
 
 unify :: [TypeConstraint] -> [Substitution]
 unify [] = []
@@ -16,7 +17,7 @@ unify (constraint:rest) = maybeToList sub ++ unify (substituteConstraints (new +
 reduce :: TypeConstraint -> ([TypeConstraint], Maybe Substitution)
 reduce (left, right)
     | left == right = ([], Nothing)
-reduce (BinaryNode leftIn leftOut, BinaryNode rightIn rightOut)
+reduce (Branch leftIn leftOut, Branch rightIn rightOut)
     = ([typeConstraint leftIn rightIn, typeConstraint leftOut rightOut], Nothing)
 reduce (left@(Leaf (TypeVar var)), right)
     | left `notPartOf` right = ([], Just $ Substitution var right)
