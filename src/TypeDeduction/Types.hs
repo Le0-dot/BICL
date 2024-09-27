@@ -2,9 +2,9 @@ module TypeDeduction.Types where
 
 import Data.Text (Text)
 import Control.Monad.State (State, MonadState (get, put), gets, modify)
-import TypeDeduction.Scope (Scope, findMapping, KeyValueItem (..), addMapping, pushScope, popScope)
 import Data.Bifunctor (Bifunctor(second))
 import Data.BinaryTree (BinaryTree)
+import Data.Scope (Scope, findMapping, KeyValueItem (..), addMapping, pushScope, popScope)
 
 data BasicType
     = IntegerType
@@ -53,7 +53,7 @@ envScope inf = do
     res <- inf
     modifyEnv $ \s -> case popScope s of
         Just scope -> scope
-        Nothing -> error "something gone terribly wrong: no more scopes to pop, do not manually use popScope"
+        Nothing -> error "something gone terribly wrong: no more scopes to pop, do not manually use popScope with envScope"
     return res
 
 envFind :: Text -> Inference Scheme

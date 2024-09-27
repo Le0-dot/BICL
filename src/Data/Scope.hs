@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 
-module TypeDeduction.Scope where
+module Data.Scope (Scope(..), KeyValueItem(..), pushScope, popScope, addMapping, findMapping) where
 
 import Data.Kind (Type)
 import Data.Foldable (find)
@@ -10,6 +10,12 @@ data Scope kv = Scope
     { scopeMappings :: [kv] -- Since there should not be many elements Map is not necessary
     , outerScope    :: Maybe (Scope kv)
     } deriving (Show, Functor, Foldable)
+
+instance Semigroup (Scope kv) where
+    (Scope m1 o1) <> (Scope m2 o2) = Scope (m1 <> m2) (o1 <> o2)
+
+instance Monoid (Scope kv) where
+    mempty = Scope [] Nothing
 
 class KeyValueItem (kv :: Type -> Type -> Type) where
     keyValue :: k -> v -> kv k v
@@ -35,6 +41,3 @@ addMapping k v scope@(Scope mappings outer) =
 
 findMapping :: (KeyValueItem kv, Eq k) => k -> Scope (kv k v) -> Maybe (kv k v)
 findMapping k = find ((== k) . key)
-
-emptyScope :: Scope kv
-emptyScope = Scope [] Nothing

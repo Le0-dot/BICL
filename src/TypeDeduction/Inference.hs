@@ -7,7 +7,7 @@ import TypeDeduction.Unification (unify, substituteAny)
 import Control.Monad.State (gets)
 import Data.List ((\\), group, sort)
 import Data.Maybe (listToMaybe, mapMaybe, maybeToList)
-import TypeDeduction.Scope (value)
+import Data.Scope (value)
 import Data.Semigroup (Semigroup(sconcat))
 import Data.List.NonEmpty (NonEmpty((:|)))
 

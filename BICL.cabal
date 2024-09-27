@@ -20,10 +20,10 @@ executable BICL
                     , Parser.Types
                     , TypeDeduction
                     , TypeDeduction.Types
-                    , TypeDeduction.Scope
                     , TypeDeduction.Inference
                     , TypeDeduction.Unification
                     , Data.BinaryTree
+                    , Data.Scope
     build-depends:    base ^>=4.19.1.0
                     , megaparsec
                     , text
